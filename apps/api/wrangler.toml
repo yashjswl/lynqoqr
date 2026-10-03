@@ -1,0 +1,27 @@
+# Template. Copy to wrangler.local.toml (gitignored), fill in your own values, and run the npm scripts.
+name = "lynqoqr"
+main = "src/index.ts"
+compatibility_date = "2025-01-01"
+
+# Serves the built web app and the API from one Worker.
+[assets]
+directory = "../web/dist"
+binding = "ASSETS"
+not_found_handling = "single-page-application"
+run_worker_first = ["/api/*"]
+
+[vars]
+# Public base of the domain that serves your short links (no trailing slash).
+SHORT_BASE_URL = "https://your-short-domain.example"
+# Cloudflare Access (leave empty for local dev; set both in production)
+ACCESS_TEAM_DOMAIN = ""   # e.g. https://<team>.cloudflareaccess.com
+ACCESS_AUD = ""
+
+[[kv_namespaces]]
+binding = "LINKS"
+id = "REPLACE_WITH_YOUR_KV_NAMESPACE_ID"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "lynqoqr"
+database_id = "REPLACE_WITH_YOUR_D1_DATABASE_ID"
