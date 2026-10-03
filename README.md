@@ -2,11 +2,24 @@
 
 Turn a promo link (Google Form, event page, booking page) into a **short link** and a **QR code with your logo in the center**, keep every one in a library, and **share the QR to WhatsApp** in one tap.
 
-| Links | New link |
-|---|---|
-| ![Links page](docs/screenshots/library-desktop.png) | ![New link page](docs/screenshots/create.jpg) |
-
-<img src="docs/screenshots/library-mobile.jpg" alt="Links page on a phone" width="320">
+<table>
+  <tr>
+    <th align="center">Links (desktop)</th>
+    <th align="center">New link (desktop)</th>
+  </tr>
+  <tr>
+    <td><img src="docs/screenshots/library-desktop.png" alt="Links page on desktop"></td>
+    <td><img src="docs/screenshots/create.jpg" alt="New link page on desktop"></td>
+  </tr>
+  <tr>
+    <th align="center">Links (mobile)</th>
+    <th align="center">New link (mobile)</th>
+  </tr>
+  <tr>
+    <td align="center"><img src="docs/screenshots/library-mobile.jpg" alt="Links page on a phone" width="240"></td>
+    <td align="center"><img src="docs/screenshots/create-mobile.jpg" alt="New link page on a phone" width="240"></td>
+  </tr>
+</table>
 
 ## Live deployment
 
