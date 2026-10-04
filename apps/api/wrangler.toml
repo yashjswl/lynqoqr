@@ -3,6 +3,9 @@ name = "lynqoqr"
 main = "src/index.ts"
 compatibility_date = "2025-01-01"
 
+# Optional custom domain for the app (the zone must be on your Cloudflare account).
+# routes = [{ pattern = "app.example.com", custom_domain = true }]
+
 # Serves the built web app and the API from one Worker.
 [assets]
 directory = "../web/dist"
@@ -13,6 +16,12 @@ run_worker_first = ["/api/*"]
 [vars]
 # Public base of the domain that serves your short links (no trailing slash).
 SHORT_BASE_URL = "https://your-short-domain.example"
+# Optional: serve links from several domains, each with its own KV namespace. Replaces SHORT_BASE_URL.
+# DOMAINS = '''[
+#   {"id":"primary","label":"short.example","base":"https://short.example","kv":"LINKS"},
+#   {"id":"second","label":"other.example","base":"https://other.example","kv":"LINKS_2"}
+# ]'''
+# (declare a matching [[kv_namespaces]] binding for every `kv` name)
 # Cloudflare Access (leave empty for local dev; set both in production)
 ACCESS_TEAM_DOMAIN = ""   # e.g. https://<team>.cloudflareaccess.com
 ACCESS_AUD = ""

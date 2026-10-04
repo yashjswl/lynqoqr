@@ -5,10 +5,15 @@ type Env = {
   LINKS: KVNamespace;
   DB: D1Database;
   ASSETS: Fetcher;
-  SHORT_BASE_URL: string;
+  SHORT_BASE_URL?: string;
+  DOMAINS?: string;
   ACCESS_TEAM_DOMAIN: string;
   ACCESS_AUD: string;
+  [kvBinding: string]: unknown;
 };
+
+// A short-link domain: where its links are served from (base) and which KV namespace stores its slugs (kv binding name).
+type Domain = { id: string; label: string; base: string; kv: string };
 
 type Row = {
   id: string;
@@ -19,6 +24,7 @@ type Row = {
   logo: string | null;
   created_at: string;
   updated_at: string;
+  domain: string;
 };
 
 const SLUG_RE = /^[a-z0-9][a-z0-9-]{1,38}[a-z0-9]$/;
@@ -41,12 +47,34 @@ app.use("/api/*", async (c, next) => {
   return next();
 });
 
+// DOMAINS is a JSON array of {id, label?, base, kv}. Without it, SHORT_BASE_URL gives a single domain stored in LINKS.
+function getDomains(env: Env): Domain[] {
+  if (env.DOMAINS) {
+    const list = JSON.parse(env.DOMAINS) as Partial<Domain>[];
+    return list.map((d) => ({
+      id: d.id!,
+      base: d.base!.replace(/\/$/, ""),
+      kv: d.kv ?? "LINKS",
+      label: d.label ?? d.base!.replace(/^https?:\/\//, ""),
+    }));
+  }
+  const base = (env.SHORT_BASE_URL ?? "").replace(/\/$/, "");
+  return [{ id: "primary", label: base.replace(/^https?:\/\//, ""), base, kv: "LINKS" }];
+}
+
+const findDomain = (env: Env, id: string | undefined | null) => {
+  const all = getDomains(env);
+  return id ? all.find((d) => d.id === id) : all[0];
+};
+const kvFor = (env: Env, d: Domain) => env[d.kv] as KVNamespace;
+
 const shape = (env: Env, r: Row) => ({
   id: r.id,
   title: r.title,
   targetUrl: r.target_url,
   slug: r.slug,
-  shortUrl: `${env.SHORT_BASE_URL.replace(/\/$/, "")}/${r.slug}`,
+  domain: r.domain,
+  shortUrl: `${findDomain(env, r.domain)?.base ?? ""}/${r.slug}`,
   qrOptions: JSON.parse(r.qr_options || "{}"),
   logo: r.logo,
   createdAt: r.created_at,
@@ -92,7 +120,9 @@ function validate(body: Input, partial: boolean) {
   return { value: out };
 }
 
-app.get("/api/config", (c) => c.json({ shortBase: c.env.SHORT_BASE_URL.replace(/\/$/, "") + "/" }));
+app.get("/api/config", (c) =>
+  c.json({ domains: getDomains(c.env).map((d) => ({ id: d.id, label: d.label, base: d.base + "/" })) }),
+);
 
 app.get("/api/settings", async (c) => {
   const row = await c.env.DB.prepare("SELECT value FROM settings WHERE key = 'default_logo'").first<{ value: string }>();
@@ -116,26 +146,32 @@ app.get("/api/entries", async (c) => {
 
 app.get("/api/slug/:slug/available", async (c) => {
   const slug = c.req.param("slug").toLowerCase();
+  const domain = findDomain(c.env, c.req.query("domain"));
+  if (!domain) return c.json({ error: "unknown domain" }, 400);
   if (!SLUG_RE.test(slug)) return c.json({ available: false, reason: "invalid" });
-  const taken = await c.env.LINKS.get(slug);
+  const taken = await kvFor(c.env, domain).get(slug);
   return c.json({ available: taken === null });
 });
 
 app.post("/api/entries", async (c) => {
-  const { value: v, error } = validate(await c.req.json<Input>().catch(() => ({})), false);
+  const body = await c.req.json<Input & { domain?: unknown }>().catch(() => ({}) as Input & { domain?: unknown });
+  const { value: v, error } = validate(body, false);
   if (!v) return c.json({ error }, 400);
-  if ((await c.env.LINKS.get(v.slug!)) !== null) return c.json({ error: "slug already in use" }, 409);
+  const domain = findDomain(c.env, typeof body.domain === "string" ? body.domain : undefined);
+  if (!domain) return c.json({ error: "unknown domain" }, 400);
+  const kv = kvFor(c.env, domain);
+  if ((await kv.get(v.slug!)) !== null) return c.json({ error: "slug already in use" }, 409);
 
   const id = crypto.randomUUID();
-  await c.env.LINKS.put(v.slug!, v.targetUrl!);
+  await kv.put(v.slug!, v.targetUrl!);
   try {
     await c.env.DB.prepare(
-      "INSERT INTO entries (id, title, target_url, slug, qr_options, logo) VALUES (?, ?, ?, ?, ?, ?)",
+      "INSERT INTO entries (id, title, target_url, slug, qr_options, logo, domain) VALUES (?, ?, ?, ?, ?, ?, ?)",
     )
-      .bind(id, v.title, v.targetUrl, v.slug, v.qrOptions ?? "{}", v.logo ?? null)
+      .bind(id, v.title, v.targetUrl, v.slug, v.qrOptions ?? "{}", v.logo ?? null, domain.id)
       .run();
   } catch (e) {
-    await c.env.LINKS.delete(v.slug!); // roll back
+    await kv.delete(v.slug!); // roll back
     return c.json({ error: "failed to save entry" }, 500);
   }
   const row = await c.env.DB.prepare("SELECT * FROM entries WHERE id = ?").bind(id).first<Row>();
@@ -149,12 +185,15 @@ app.patch("/api/entries/:id", async (c) => {
   const { value: v, error } = validate(await c.req.json<Input>().catch(() => ({})), true);
   if (!v) return c.json({ error }, 400);
 
+  const domain = findDomain(c.env, cur.domain);
+  if (!domain) return c.json({ error: "this link's domain is no longer configured" }, 400);
+  const kv = kvFor(c.env, domain);
   const slug = v.slug ?? cur.slug;
   const target = v.targetUrl ?? cur.target_url;
   const slugChanged = slug !== cur.slug;
-  if (slugChanged && (await c.env.LINKS.get(slug)) !== null) return c.json({ error: "slug already in use" }, 409);
+  if (slugChanged && (await kv.get(slug)) !== null) return c.json({ error: "slug already in use" }, 409);
 
-  await c.env.LINKS.put(slug, target);
+  await kv.put(slug, target);
   try {
     await c.env.DB.prepare(
       "UPDATE entries SET title=?, target_url=?, slug=?, qr_options=?, logo=?, updated_at=datetime('now') WHERE id=?",
@@ -169,20 +208,22 @@ app.patch("/api/entries/:id", async (c) => {
       )
       .run();
   } catch {
-    if (slugChanged) await c.env.LINKS.delete(slug);
-    else await c.env.LINKS.put(cur.slug, cur.target_url);
+    if (slugChanged) await kv.delete(slug);
+    else await kv.put(cur.slug, cur.target_url);
     return c.json({ error: "failed to update entry" }, 500);
   }
-  if (slugChanged) await c.env.LINKS.delete(cur.slug);
+  if (slugChanged) await kv.delete(cur.slug);
   const row = await c.env.DB.prepare("SELECT * FROM entries WHERE id = ?").bind(id).first<Row>();
   return c.json(shape(c.env, row!));
 });
 
 app.delete("/api/entries/:id", async (c) => {
   const id = c.req.param("id");
-  const cur = await c.env.DB.prepare("SELECT slug FROM entries WHERE id = ?").bind(id).first<{ slug: string }>();
+  const cur = await c.env.DB.prepare("SELECT slug, domain FROM entries WHERE id = ?").bind(id).first<{ slug: string; domain: string }>();
   if (!cur) return c.json({ error: "not found" }, 404);
-  await c.env.LINKS.delete(cur.slug);
+  const domain = findDomain(c.env, cur.domain);
+  if (!domain) return c.json({ error: "this link's domain is no longer configured" }, 400);
+  await kvFor(c.env, domain).delete(cur.slug);
   await c.env.DB.prepare("DELETE FROM entries WHERE id = ?").bind(id).run();
   return c.body(null, 204);
 });

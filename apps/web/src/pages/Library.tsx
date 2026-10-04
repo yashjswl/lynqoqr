@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Check, Copy, Download, ExternalLink, Link2, MessageCircle, Pencil, Search, Trash2 } from "lucide-react";
-import { api, type Entry } from "../lib/api";
+import { api, type Domain, type Entry } from "../lib/api";
 import { caption, download, qrFile, shareToWhatsApp } from "../lib/share";
 import QrThumb from "../components/QrThumb";
 import Menu from "../components/Menu";
@@ -15,14 +15,16 @@ export default function Library({ onEdit, onNew, notify }: { onEdit: (e: Entry) 
   const [err, setErr] = useState("");
   const [copied, setCopied] = useState<string | null>(null);
   const [toDelete, setToDelete] = useState<Entry | null>(null);
+  const [domains, setDomains] = useState<Domain[]>([]);
+  const [domainFilter, setDomainFilter] = useState("all");
 
   const load = () => api.list().then(setItems).catch((e) => setErr(e.message));
-  useEffect(() => { load(); }, []);
+  useEffect(() => { load(); api.config().then((c) => setDomains(c.domains)).catch(() => {}); }, []);
 
   const shown = useMemo(() => {
     const n = q.trim().toLowerCase();
-    return (items ?? []).filter((i) => !n || `${i.title} ${i.slug} ${i.targetUrl}`.toLowerCase().includes(n));
-  }, [items, q]);
+    return (items ?? []).filter((i) => (domainFilter === "all" || i.domain === domainFilter) && (!n || `${i.title} ${i.slug} ${i.targetUrl}`.toLowerCase().includes(n)));
+  }, [items, q, domainFilter]);
 
   const copy = async (text: string, key: string, msg: string) => {
     await navigator.clipboard.writeText(text);
@@ -55,6 +57,16 @@ export default function Library({ onEdit, onNew, notify }: { onEdit: (e: Entry) 
           <input type="search" placeholder="Search title, slug or URL" aria-label="Search links" value={q} onChange={(e) => setQ(e.target.value)} />
         </label>
       </div>
+
+      {domains.length > 1 && (
+        <div className="seg" role="tablist" aria-label="Filter by domain">
+          {[{ id: "all", label: "All" }, ...domains].map((d) => (
+            <button key={d.id} role="tab" aria-selected={domainFilter === d.id} className={domainFilter === d.id ? "on" : ""} onClick={() => setDomainFilter(d.id)}>
+              {d.label}
+            </button>
+          ))}
+        </div>
+      )}
 
       {err && <p className="alert" role="alert">{err}</p>}
 

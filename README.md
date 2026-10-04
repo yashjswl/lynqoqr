@@ -66,6 +66,10 @@ export default {
 
 Slugs are lowercased by both sides, so a short link works whatever case you type it in.
 
+### Multiple short domains
+
+Set `DOMAINS` in `wrangler.local.toml` (see the commented example in `apps/api/wrangler.toml`) to serve links from more than one domain. Each domain has its own KV namespace, so slugs never collide, and each link remembers its domain. `apps/redirect` is a ready-to-deploy redirect Worker for one domain.
+
 ## Stack
 
 Vite + React + TypeScript, Hono on Cloudflare Workers (serving the built app as static assets), D1, Workers KV, [`qr-code-styling`](https://github.com/kozakdenys/qr-code-styling). Access control via Cloudflare Access; the API also verifies the Access JWT when configured.

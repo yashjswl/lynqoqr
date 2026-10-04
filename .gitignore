@@ -6,3 +6,4 @@ dist
 .DS_Store
 wrangler.local.toml
 .impeccable/
+apps/redirect/wrangler.local.toml

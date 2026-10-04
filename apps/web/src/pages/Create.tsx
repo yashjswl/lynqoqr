@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { ArrowLeft, Check, Download, ImagePlus, Loader2, MessageCircle, X } from "lucide-react";
-import { api, type Entry } from "../lib/api";
+import { api, type Domain, type Entry } from "../lib/api";
 import { defaultQr, makeQr } from "../lib/qr";
 import { download, qrFile, shareToWhatsApp } from "../lib/share";
 
@@ -14,7 +14,9 @@ export default function Create({ editing, onDone, notify }: { editing: Entry | n
   const [slugTouched, setSlugTouched] = useState(!!editing);
   const [logo, setLogo] = useState<string | null>(editing?.logo ?? null);
   const [opts, setOpts] = useState({ ...defaultQr, ...editing?.qrOptions });
-  const [base, setBase] = useState(editing ? editing.shortUrl.slice(0, -editing.slug.length) : "");
+  const [domains, setDomains] = useState<Domain[]>([]);
+  const [domainId, setDomainId] = useState(editing?.domain ?? "");
+  const base = domains.find((d) => d.id === domainId)?.base ?? (editing ? editing.shortUrl.slice(0, -editing.slug.length) : "");
   const [avail, setAvail] = useState<"idle" | "checking" | "yes" | "no">("idle");
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState("");
@@ -27,15 +29,22 @@ export default function Create({ editing, onDone, notify }: { editing: Entry | n
     if (editing) return;
     api.settings().then((s) => { if (s.defaultLogo && !logoTouched.current) setLogo(s.defaultLogo); }).catch(() => {});
   }, [editing]);
-  useEffect(() => { if (!base) api.config().then((c) => setBase(c.shortBase)).catch(() => {}); }, [base]);
+  useEffect(() => {
+    api.config().then((c) => {
+      setDomains(c.domains);
+      if (editing) return;
+      const last = localStorage.getItem("lynqoqr:domain");
+      setDomainId(c.domains.find((d) => d.id === last)?.id ?? c.domains[0]?.id ?? "");
+    }).catch(() => {});
+  }, [editing]);
   useEffect(() => { if (!slugTouched) setSlug(slugify(title)); }, [title, slugTouched]);
 
   useEffect(() => {
-    if (slug.length < 3 || slug === editing?.slug) { setAvail("idle"); return; }
+    if (!domainId || slug.length < 3 || (slug === editing?.slug && domainId === editing?.domain)) { setAvail("idle"); return; }
     setAvail("checking");
-    const t = setTimeout(() => api.slugAvailable(slug).then((r) => setAvail(r.available ? "yes" : "no")).catch(() => setAvail("idle")), 350);
+    const t = setTimeout(() => api.slugAvailable(slug, domainId).then((r) => setAvail(r.available ? "yes" : "no")).catch(() => setAvail("idle")), 350);
     return () => clearTimeout(t);
-  }, [slug, editing]);
+  }, [slug, domainId, editing]);
 
   const shortUrl = `${base}${slug || "your-link"}`;
 
@@ -63,9 +72,9 @@ export default function Create({ editing, onDone, notify }: { editing: Entry | n
     setBusy(true);
     setErr("");
     try {
-      const body = { title, targetUrl, slug, qrOptions: opts, logo };
+      const body = { title, targetUrl, slug, qrOptions: opts, logo, ...(editing ? {} : { domain: domainId }) };
       if (editing) await api.update(editing.id, body);
-      else await api.create(body);
+      else { await api.create(body); try { localStorage.setItem("lynqoqr:domain", domainId); } catch {} }
       if (uploaded.current && logo) await api.saveDefaultLogo(logo).catch(() => {});
       onDone(editing ? "Changes saved" : "Link created");
     } catch (e) {
@@ -93,6 +102,15 @@ export default function Create({ editing, onDone, notify }: { editing: Entry | n
               <input id="title" value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Annual meetup registration" maxLength={200} />
               <p className="hint">Used as the first line when you share on WhatsApp.</p>
             </div>
+            {(domains.length > 1 || (editing && domains.length > 0)) && (
+              <div className="field">
+                <label htmlFor="domain">Domain</label>
+                <select id="domain" value={domainId} disabled={!!editing} onChange={(e) => setDomainId(e.target.value)}>
+                  {domains.map((d) => <option key={d.id} value={d.id}>{d.label}</option>)}
+                </select>
+                {editing && <p className="hint">A link's domain can't be changed after it's created.</p>}
+              </div>
+            )}
             <div className="field">
               <label htmlFor="slug">Short link</label>
               <div className="addon">
@@ -143,7 +161,7 @@ export default function Create({ editing, onDone, notify }: { editing: Entry | n
           {err && <p className="alert" role="alert">{err}</p>}
           <div className="form-actions">
             <button type="button" className="btn" onClick={() => onDone()}>Cancel</button>
-            <button type="submit" className="btn primary" disabled={!ready || busy}>
+            <button type="submit" className="btn primary" disabled={!ready || busy || !domainId}>
               {busy && <Loader2 size={16} className="spin" />}{editing ? "Save changes" : "Create link"}
             </button>
           </div>

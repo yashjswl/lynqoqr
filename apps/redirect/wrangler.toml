@@ -1,0 +1,13 @@
+# Redirect Worker for one short-link domain. Copy to wrangler.local.toml (gitignored) and fill in your values.
+name = "short-redirect"
+main = "index.js"
+compatibility_date = "2025-01-01"
+workers_dev = false
+
+# Attach it to your short domain from the dashboard (Worker > Settings > Domains & Routes),
+# or uncomment and set a route here. The zone must be on your Cloudflare account.
+# routes = [{ pattern = "short.example/*", zone_name = "short.example" }]
+
+[[kv_namespaces]]
+binding = "redirects"
+id = "REPLACE_WITH_YOUR_KV_NAMESPACE_ID"
