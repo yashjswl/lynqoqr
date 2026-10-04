@@ -23,7 +23,7 @@ Turn a promo link (Google Form, event page, booking page) into a **short link** 
 
 ## Live deployment
 
-**https://lynqoqr.yashasvi-jaiswal-2006.workers.dev**
+**https://lynqoqr.yashjswl.com**
 
 The deployment is private as it writes to personal short-link storage. **Please request access via LinkedIn/Github**.
 
@@ -92,4 +92,6 @@ LinkedIn: [linkedin.com/in/yashjswl](https://www.linkedin.com/in/yashjswl/)
 
 ---
 
-&copy; 2026 Yashasvi Jaiswal.
+&copy; 2026 [Yashasvi Jaiswal](https://yashjswl.com).
+
+Email: [hello@yashjswl.com](mailto:hello@yashjswl.com)
