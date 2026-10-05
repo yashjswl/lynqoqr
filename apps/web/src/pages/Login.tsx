@@ -21,6 +21,7 @@ export default function Login({ onSignedIn }: { onSignedIn: (u: User) => void })
   }
 
   return (
+    <div className="login-shell">
     <main className="login">
       <form className="card login-card" onSubmit={submit}>
         <span className="brand-mark big"><Link2 size={22} strokeWidth={2.25} /></span>
@@ -37,8 +38,12 @@ export default function Login({ onSignedIn }: { onSignedIn: (u: User) => void })
         <button className="btn primary" type="submit" disabled={busy || !email || !password}>
           {busy && <Loader2 size={16} className="spin" />}Sign in
         </button>
-        <p className="hint center">Accounts are created by an administrator.</p>
+        <p className="hint center">
+          Accounts are created by an administrator. <a href="mailto:hello@yashjswl.com">Contact admin</a>
+        </p>
       </form>
     </main>
+    <footer className="footer login-footer">© 2026 Yashasvi Jaiswal</footer>
+    </div>
   );
 }
