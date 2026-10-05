@@ -169,6 +169,7 @@ input[type=range] { width: 100%; accent-color: var(--accent); height: 40px; }
 .login { flex: 1; display: grid; place-items: center; padding: 24px 16px; }
 .login-footer { width: 100%; text-align: center; border-top: 0; padding-top: 0; }
 .hint a { color: var(--accent); text-underline-offset: 2px; }
+.hint a.contact { display: block; margin-top: 4px; font-weight: 500; }
 .login-card { width: min(380px, 100%); display: grid; gap: 4px; padding: 28px; }
 .login-card h1 { font-size: 20px; margin: 14px 0 20px; }
 .login-card .btn { width: 100%; margin-top: 6px; }

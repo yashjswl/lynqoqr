@@ -39,7 +39,8 @@ export default function Login({ onSignedIn }: { onSignedIn: (u: User) => void })
           {busy && <Loader2 size={16} className="spin" />}Sign in
         </button>
         <p className="hint center">
-          Accounts are created by an administrator. <a href="mailto:hello@yashjswl.com">Contact admin</a>
+          Accounts are created by an administrator.
+          <a className="contact" href="mailto:hello@yashjswl.com">Contact admin</a>
         </p>
       </form>
     </main>
