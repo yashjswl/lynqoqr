@@ -3,7 +3,7 @@ import { MoreHorizontal } from "lucide-react";
 
 export type MenuItem = { label: string; icon?: ReactNode; onSelect: () => void; danger?: boolean };
 
-export default function Menu({ items, label }: { items: MenuItem[]; label: string }) {
+export default function Menu({ items, label, icon }: { items: MenuItem[]; label: string; icon?: ReactNode }) {
   const [open, setOpen] = useState(false);
   const root = useRef<HTMLDivElement>(null);
 
@@ -19,7 +19,7 @@ export default function Menu({ items, label }: { items: MenuItem[]; label: strin
   return (
     <div className="menu" ref={root}>
       <button className="btn icon" aria-label={label} aria-haspopup="menu" aria-expanded={open} onClick={() => setOpen(!open)}>
-        <MoreHorizontal size={18} />
+        {icon ?? <MoreHorizontal size={18} />}
       </button>
       {open && (
         <div className="menu-list" role="menu">

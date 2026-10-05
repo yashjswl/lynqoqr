@@ -22,9 +22,8 @@ SHORT_BASE_URL = "https://your-short-domain.example"
 #   {"id":"second","label":"other.example","base":"https://other.example","kv":"LINKS_2"}
 # ]'''
 # (declare a matching [[kv_namespaces]] binding for every `kv` name)
-# Cloudflare Access (leave empty for local dev; set both in production)
-ACCESS_TEAM_DOMAIN = ""   # e.g. https://<team>.cloudflareaccess.com
-ACCESS_AUD = ""
+# The admin account is created from this email and the ADMIN_PASSWORD secret (see README) on first sign-in.
+ADMIN_EMAIL = "you@example.com"
 
 [[kv_namespaces]]
 binding = "LINKS"

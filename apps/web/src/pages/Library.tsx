@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Check, Copy, Download, ExternalLink, Link2, MessageCircle, Pencil, Search, Trash2 } from "lucide-react";
-import { api, type Domain, type Entry } from "../lib/api";
+import { api, type Domain, type Entry, type User } from "../lib/api";
 import { caption, download, qrFile, shareToWhatsApp } from "../lib/share";
 import QrThumb from "../components/QrThumb";
 import Menu from "../components/Menu";
@@ -9,7 +9,7 @@ import ConfirmDialog from "../components/ConfirmDialog";
 const fmt = (iso: string) =>
   new Date(iso.replace(" ", "T") + "Z").toLocaleDateString(undefined, { day: "numeric", month: "short", year: "numeric" });
 
-export default function Library({ onEdit, onNew, notify }: { onEdit: (e: Entry) => void; onNew: () => void; notify: (m: string) => void }) {
+export default function Library({ me, onEdit, onNew, notify }: { me: User; onEdit: (e: Entry) => void; onNew: () => void; notify: (m: string) => void }) {
   const [items, setItems] = useState<Entry[] | null>(null);
   const [q, setQ] = useState("");
   const [err, setErr] = useState("");
@@ -80,8 +80,8 @@ export default function Library({ onEdit, onNew, notify }: { onEdit: (e: Entry) 
         <div className="empty">
           <span className="empty-icon"><Link2 size={22} /></span>
           <h2>No links yet</h2>
-          <p>Paste a form, event or booking link to get a short link and a QR code you can share.</p>
-          <button className="btn primary" onClick={onNew}>Create your first link</button>
+          <p>{me.domains.length ? "Paste a form, event or booking link to get a short link and a QR code you can share." : "You don't have access to any short-link domain yet. Ask an administrator to grant you one."}</p>
+          {me.domains.length > 0 && <button className="btn primary" onClick={onNew}>Create your first link</button>}
         </div>
       )}
 
@@ -99,6 +99,7 @@ export default function Library({ onEdit, onNew, notify }: { onEdit: (e: Entry) 
                 <span>{e.shortUrl.replace(/^https?:\/\//, "")}</span>
                 {copied === e.id ? <Check size={14} /> : <Copy size={14} />}
               </button>
+              {me.role === "admin" && e.ownerEmail && e.ownerEmail !== me.email && <p className="row-owner">Created by {e.ownerEmail}</p>}
               <p className="row-dest" title={e.targetUrl}>
                 <ExternalLink size={13} aria-hidden />{e.targetUrl.replace(/^https?:\/\//, "")}
               </p>

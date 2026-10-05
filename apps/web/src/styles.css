@@ -162,3 +162,31 @@ input[type=range] { width: 100%; accent-color: var(--accent); height: 40px; }
   .chip { min-height: 32px; }
   .form-actions .btn { flex: 1; }
 }
+
+/* auth + users */
+.boot { min-height: 100vh; }
+.login { min-height: 100vh; display: grid; place-items: center; padding: 24px 16px; }
+.login-card { width: min(380px, 100%); display: grid; gap: 4px; padding: 28px; }
+.login-card h1 { font-size: 20px; margin: 14px 0 20px; }
+.login-card .btn { width: 100%; margin-top: 6px; }
+.login-card .hint { margin-top: 12px; }
+.brand-mark.big { width: 40px; height: 40px; border-radius: 10px; }
+.top-actions { display: flex; align-items: center; gap: 8px; }
+.narrow { max-width: 440px; }
+.stack-form { margin-bottom: 16px; }
+.inline { display: flex; gap: 8px; }
+.inline input { flex: 1; min-width: 0; }
+.checks { display: flex; flex-wrap: wrap; gap: 8px 18px; }
+.check { display: inline-flex; align-items: center; gap: 8px; margin: 0; font-size: 14px; font-weight: 500; color: var(--text); cursor: pointer; }
+.check input { width: 18px; height: 18px; accent-color: var(--accent); margin: 0; }
+.urow { padding: 14px 16px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); display: grid; gap: 12px; }
+.urow.off { opacity: .7; }
+.urow-head { display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; align-items: center; }
+.urow-id { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; min-width: 0; overflow-wrap: anywhere; }
+.urow-domains { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+.badge { display: inline-flex; align-items: center; gap: 4px; padding: 2px 8px; border-radius: 6px; font-size: 12px; font-weight: 500; color: var(--accent); background: color-mix(in srgb, var(--accent) 10%, transparent); }
+.badge.muted { color: var(--text-2); background: var(--surface-2); }
+.reset { padding-top: 4px; }
+.row-owner { font-size: 12px; color: var(--text-3); }
+.actions { display: flex; gap: 6px; flex-wrap: wrap; }
+@media (max-width: 760px) { .inline { flex-wrap: wrap; } .urow-head .actions .btn { flex: 1; } }

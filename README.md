@@ -34,6 +34,7 @@ The deployment is private as it writes to personal short-link storage. **Please 
 - Your last uploaded logo is stored and used for the next QR until you upload a different one.
 - Library with search, edit, delete, QR download and caption copy.
 - WhatsApp share: on a phone it opens the share sheet with the QR image and the caption `Title`, newline, `Short Link: <url>`. On desktop it downloads the QR, copies the caption and opens WhatsApp.
+- Accounts and roles: an administrator creates users and chooses which short domains each can use. Users only see their own links.
 - Light and dark themes, mobile-first.
 
 ## How it works
@@ -72,7 +73,7 @@ Set `DOMAINS` in `wrangler.local.toml` (see the commented example in `apps/api/w
 
 ## Stack
 
-Vite + React + TypeScript, Hono on Cloudflare Workers (serving the built app as static assets), D1, Workers KV, [`qr-code-styling`](https://github.com/kozakdenys/qr-code-styling). Access control via Cloudflare Access; the API also verifies the Access JWT when configured.
+Vite + React + TypeScript, Hono on Cloudflare Workers (serving the built app as static assets), D1, Workers KV, [`qr-code-styling`](https://github.com/kozakdenys/qr-code-styling). Built-in accounts: email and password sign-in (PBKDF2 hashes, HTTP-only session cookies), an admin role that creates users and grants them access to specific short domains.
 
 ## Run your own
 
@@ -81,7 +82,7 @@ Vite + React + TypeScript, Hono on Cloudflare Workers (serving the built app as 
 3. `cp apps/api/wrangler.toml apps/api/wrangler.local.toml` (gitignored) and fill in the KV namespace id, the D1 database id and `SHORT_BASE_URL` (the public domain that serves your short links, no trailing slash).
 4. `npm run db:local` then `npm run dev:api` (serves the built app and API on http://localhost:8787; run `npm run build` first). `npm run dev:web` gives hot reload and proxies `/api`.
 5. Deploy: `npm run db:remote -w apps/api`, then `npm run deploy`.
-6. Put the Worker's domain behind Cloudflare Access and set `ACCESS_TEAM_DOMAIN` and `ACCESS_AUD` in `wrangler.local.toml` so the API verifies the login token.
+6. Set the admin password as a secret (it is only used to create the admin account on first sign-in): `cd apps/api && npx wrangler secret put ADMIN_PASSWORD -c wrangler.local.toml`, and set `ADMIN_EMAIL` in `wrangler.local.toml`. Then sign in with that email and password and add users from the Users page.
 
 ## Project layout
 
